@@ -13,15 +13,16 @@ import (
 )
 
 type DB struct {
-	db *bolt.DB
+	Db       *bolt.DB
 	IDSource crdt.ObserveGUIDer
-	Options struct {
+	Options  struct {
 		CollisionStrategy string
 	}
 }
 
 const (
 	KEYS = "keys"
+	OPS  = "ops"
 )
 
 var ReadyDBs = sync.Map{}
@@ -50,12 +51,17 @@ func (d *DB) Init(path string) error {
 		return err
 	}
 
-	d.db = db
+	d.Db = db
 
 	db.Update(func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucketIfNotExists([]byte(KEYS))
 		if err != nil {
 			return fmt.Errorf("create addMap bucket: %s", err)
+		}
+
+		_, err = tx.CreateBucketIfNotExists([]byte(OPS))
+		if err != nil {
+			return fmt.Errorf("create oplog bucket: %s", err)
 		}
 
 		return nil
@@ -65,7 +71,51 @@ func (d *DB) Init(path string) error {
 }
 
 func (d *DB) Close() {
-	d.db.Close()
+	d.Db.Close()
+}
+
+func (d *DB) AddOp(keyID string, value *crdt.TSValue) error {
+	enc, err := Encode(value)
+	if err != nil {
+		return err
+	}
+
+	err = d.Db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(KEYS))
+		if err := b.Put([]byte(keyID), enc); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *DB) StoreOpLog(id string, value interface{}) error {
+	enc, err := Encode(value)
+	if err != nil {
+		return err
+	}
+
+	err = d.Db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(OPS))
+		if err := b.Put([]byte(id), enc); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (d *DB) Add(key string, value interface{}) error {
@@ -78,7 +128,7 @@ func (d *DB) Add(key string, value interface{}) error {
 		return err
 	}
 
-	err = d.db.Update(func(tx *bolt.Tx) error {
+	err = d.Db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(KEYS))
 		b.Put([]byte(addKey), enc)
 		return nil
@@ -92,10 +142,9 @@ func (d *DB) Add(key string, value interface{}) error {
 }
 
 func (d *DB) Remove(key string) error {
-
 	// we must copy IDs over for anything already added
 	rmMap := map[string]*crdt.TSValue{}
-	d.db.View(func(tx *bolt.Tx) error {
+	d.Db.View(func(tx *bolt.Tx) error {
 		c := tx.Bucket([]byte(KEYS)).Cursor()
 		addPrefix := []byte(fmt.Sprintf("add.%s", key))
 		for k, _ := c.Seek(addPrefix); k != nil && bytes.HasPrefix(k, addPrefix); k, _ = c.Next() {
@@ -105,10 +154,10 @@ func (d *DB) Remove(key string) error {
 		return nil
 	})
 
-	err := d.db.Update(func(tx *bolt.Tx) error {
+	err := d.Db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(KEYS))
 
-		for k  := range rmMap {
+		for k := range rmMap {
 			remKey := strings.Replace(k, "add.", "rem.", 1)
 			b.Put([]byte(remKey), []byte{})
 		}
@@ -126,7 +175,7 @@ func (d *DB) Load(key string) (crdt.Payload, bool) {
 	addPrefix := []byte(fmt.Sprintf("add.%s", key))
 	var retPL crdt.Payload
 	var found bool
-	d.db.View(func(tx *bolt.Tx) error {
+	d.Db.View(func(tx *bolt.Tx) error {
 		c := tx.Bucket([]byte(KEYS)).Cursor()
 
 		addMap := map[string]*crdt.TSValue{}
@@ -208,7 +257,7 @@ func (d *DB) HandleCollision(values crdt.Payload) crdt.Payload {
 		for id, v := range values {
 			tsv := v
 			if int(tsv.TS) == last {
-				ret := map[string]*crdt.TSValue{id:v}
+				ret := map[string]*crdt.TSValue{id: v}
 				return ret
 			}
 		}

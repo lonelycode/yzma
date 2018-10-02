@@ -116,110 +116,62 @@ func TestORSetAddAddRemoveContains(t *testing.T) {
 	}
 }
 
-//func TestORSetMerge(t *testing.T) {
-//	type addRm struct {
-//		addSet []string
-//		rmSet  []string
+//func TestReplication(t *testing.T) {
+//	db1, n1 := NewORSet()
+//	db2, n2 := NewORSet()
+//	defer teardown(db1, n1)
+//	defer teardown(db2, n2)
+//
+//	var jbufDb1 = rbolt.NewJournalBuffer(db1.Db)
+//	var jbufDb2 = rbolt.NewJournalBuffer(db2.Db)
+//	var transportDb1 = &rbolt.LocalTransport{JournalBuffer: jbufDb1}
+//	var transportDb2 = &rbolt.LocalTransport{JournalBuffer: jbufDb2}
+//
+//	db1.Replication.Transport = transportDb1
+//	db2.Replication.Transport = transportDb2
+//
+//	db1.Add("foo", "bar")
+//	db2.Add("foo", "baz")
+//	db1.Add("foo2", "bazington")
+//
+//	if err := jbufDb1.Flush(); err != nil {
+//		t.Fatal(err)
 //	}
 //
-//	for _, tt := range []struct {
-//		setOne  addRm
-//		setTwo  addRm
-//		valid   map[string]struct{}
-//		invalid map[string]struct{}
-//	}{
-//		{
-//			addRm{[]string{"object1"}, []string{}},
-//			addRm{[]string{}, []string{"object1"}},
-//			map[string]struct{}{
-//				"object1": struct{}{},
-//			},
-//			map[string]struct{}{},
-//		},
-//		{
-//			addRm{[]string{}, []string{"object1"}},
-//			addRm{[]string{"object1"}, []string{}},
-//			map[string]struct{}{
-//				"object1": struct{}{},
-//			},
-//			map[string]struct{}{},
-//		},
-//		{
-//			addRm{[]string{"object1"}, []string{"object1"}},
-//			addRm{[]string{}, []string{}},
-//			map[string]struct{}{},
-//			map[string]struct{}{
-//				"object1": struct{}{},
-//			},
-//		},
-//		{
-//			addRm{[]string{}, []string{}},
-//			addRm{[]string{"object1"}, []string{"object1"}},
-//			map[string]struct{}{},
-//			map[string]struct{}{
-//				"object1": struct{}{},
-//			},
-//		},
-//		{
-//			addRm{[]string{"object2"}, []string{"object1"}},
-//			addRm{[]string{"object1"}, []string{"object2"}},
-//			map[string]struct{}{
-//				"object1": struct{}{},
-//				"object2": struct{}{},
-//			},
-//			map[string]struct{}{},
-//		},
-//		{
-//			addRm{[]string{"object2", "object1"}, []string{"object1"}},
-//			addRm{[]string{"object1", "object2"}, []string{"object2"}},
-//			map[string]struct{}{
-//				"object1": struct{}{},
-//				"object2": struct{}{},
-//			},
-//			map[string]struct{}{},
-//		},
-//		{
-//			addRm{[]string{"object2", "object1"}, []string{"object1", "object2"}},
-//			addRm{[]string{"object1", "object2"}, []string{"object2", "object1"}},
-//			map[string]struct{}{},
-//			map[string]struct{}{
-//				"object1": struct{}{},
-//				"object2": struct{}{},
-//			},
-//		},
-//	} {
-//		orset1, orset2 := NewORSet(), NewORSet()
-//
-//		for _, add := range tt.setOne.addSet {
-//			orset1.Add(add, "foo")
-//		}
-//
-//		for _, rm := range tt.setOne.rmSet {
-//			orset1.Remove(rm)
-//		}
-//
-//		for _, add := range tt.setTwo.addSet {
-//			orset2.Add(add, "foo")
-//		}
-//
-//		for _, rm := range tt.setTwo.rmSet {
-//			orset2.Remove(rm)
-//		}
-//
-//		orset1.Merge(orset2)
-//
-//		for obj, _ := range tt.valid {
-//			_, ok := orset1.Load(obj)
-//			if !ok {
-//				t.Errorf("expected set to contain: %v", obj)
-//			}
-//		}
-//
-//		for obj, _ := range tt.invalid {
-//			_, ok := orset1.Load(obj)
-//			if ok {
-//				t.Errorf("expected set to not contain: %v", obj)
-//			}
-//		}
+//	if err := jbufDb2.Flush(); err != nil {
+//		t.Fatal(err)
 //	}
+//
+//	v, ok := db1.Load("foo")
+//	log.Warn(ok)
+//	log.Info(v.Extract())
+//
+//	v2, ok2 := db2.Load("foo")
+//	log.Warn(ok2)
+//	log.Info(v2.Extract())
+//
+//	r1, ok3 := db2.Load("foo2")
+//	log.Warn(ok3)
+//	log.Info(r1.Extract())
+//
+//	db1.Db.View(func(tx *bolt.Tx) error {
+//		c := tx.Bucket([]byte(KEYS)).Cursor()
+//		addPrefix := []byte("")
+//		for k, _ := c.Seek(addPrefix); k != nil && bytes.HasPrefix(k, addPrefix); k, _ = c.Next() {
+//			log.Warn(string(k))
+//		}
+//
+//		return nil
+//	})
+//
+//	db2.Db.View(func(tx *bolt.Tx) error {
+//		c := tx.Bucket([]byte(KEYS)).Cursor()
+//		addPrefix := []byte("")
+//		for k, _ := c.Seek(addPrefix); k != nil && bytes.HasPrefix(k, addPrefix); k, _ = c.Next() {
+//			log.Warn(string(k))
+//		}
+//
+//		return nil
+//	})
+//
 //}
