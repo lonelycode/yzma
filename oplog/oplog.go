@@ -3,9 +3,9 @@ package oplog
 import (
 	"fmt"
 	"github.com/hashicorp/memberlist"
-	"github.com/lonelycode/yzma/bcaster"
 	"github.com/lonelycode/yzma/db"
 	"github.com/lonelycode/yzma/logger"
+	"github.com/lonelycode/yzma/types/bcaster"
 	"github.com/lonelycode/yzma/types/crdt"
 	"strconv"
 	"strings"
@@ -54,7 +54,6 @@ func (r *PeeringReplicator) Send(op *OpLog) error {
 	}
 
 	if r.Queue != nil {
-		log.Info("queueing broadcast!")
 		r.Queue.QueueBroadcast(&bcaster.Broadcast{Msg: msg, Notify: nil})
 	}
 
@@ -129,10 +128,8 @@ func (h *Handler) processOp(op *OpLog) error {
 	var err error
 	switch op.Op {
 	case ADD:
-		log.Info("adding")
 		err = h.db.AddOp(op.KID, op.Value)
 	case REM:
-		log.Info("removing")
 		err = h.db.Remove(op.Key)
 	default:
 		return fmt.Errorf("operation %s not supported", op.Op)

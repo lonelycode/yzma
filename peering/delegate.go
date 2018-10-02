@@ -34,7 +34,7 @@ func (p *PeerDelegate) NotifyMsg(b []byte) {
 		return
 	}
 
-	log.Info("Message is: ", string(b))
+	log.Debug("Message is: ", string(b))
 	op := &oplog.OpLog{}
 	err := db.Decode(b, op)
 	if err != nil {
@@ -44,9 +44,9 @@ func (p *PeerDelegate) NotifyMsg(b []byte) {
 	if p.bcastChan != nil {
 		select {
 		case p.bcastChan <- op:
-			log.Info("notification sent to DB")
+			log.Debug("notification sent to DB")
 		default:
-			log.Warning("notification bounced, channel busy")
+			log.Debug("notification bounced, channel busy")
 		}
 	}
 	return

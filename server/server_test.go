@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func TestServer(t *testing.T) {
+func TestServerAndReplication(t *testing.T) {
 	replicaChanS1 := make(chan *oplog.OpLog)
 	replicaChanS2 := make(chan *oplog.OpLog)
 
@@ -65,24 +65,51 @@ func TestServer(t *testing.T) {
 	s2.peers.Join([]string{"127.0.0.1:37001"})
 
 	time.Sleep(100 * time.Millisecond)
-	s1.Add("foo", "bar")
+	s1.Add("k1", "foo")
+	s1.Add("k2", "bar")
+	s1.Add("k3", "baz")
 
 	time.Sleep(100 * time.Millisecond)
-	v, ok := s1.Load("foo")
-	log.Info("S1: ", ok, v.Extract())
+	v, ok := s1.Load("k1")
+	if !ok {
+		t.Error("expected to find k1")
+	}
+	if v.Extract() != "foo" {
+		t.Error("wrong value for k1")
+	}
 
-	s2.Add("foo", "barbaz")
+	v, ok = s1.Load("k2")
+	if !ok {
+		t.Error("expected to find k2")
+	}
+	if v.Extract() != "bar" {
+		t.Error("wrong value for k2")
+	}
 
+	v, ok = s1.Load("k3")
+	if !ok {
+		t.Error("expected to find k3")
+	}
+	if v.Extract() != "baz" {
+		t.Error("wrong value for k3")
+	}
+
+	s2.Add("k1", "barbaz")
+
+	wg := sync.WaitGroup{}
+	wg.Add(1)
 	go func() {
 		time.Sleep(10 * time.Second)
-		v2, _ := s1.Load("foo")
-		log.Info("S1: ", v2.Extract())
+		v2, _ := s1.Load("k1")
+		if v2.Extract() != "barbaz" {
+			t.Error("expected s1 to have replicated k1 from s2")
+		}
+		wg.Done()
 
-		v3, _ := s2.Load("foo")
-		log.Info("S2: ", v3.Extract())
 	}()
 
-	waitForCtrlC()
+	wg.Wait()
+
 }
 
 func waitForCtrlC() {
