@@ -2,9 +2,9 @@ package db
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"github.com/lonelycode/yzma/types/crdt"
+	"github.com/vmihailenco/msgpack"
 	bolt "go.etcd.io/bbolt"
 	"sort"
 	"strings"
@@ -282,9 +282,9 @@ func (d *DB) OpLog(from string) [][]byte {
 }
 
 func Decode(value []byte, into interface{}) error {
-	return json.Unmarshal(value, into)
+	return msgpack.Unmarshal(value, into)
 }
 
 func Encode(value interface{}) ([]byte, error) {
-	return json.Marshal(value)
+	return msgpack.Marshal(value)
 }
