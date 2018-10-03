@@ -77,7 +77,7 @@ func (p *PeerDelegate) LocalState(join bool) []byte {
 }
 
 func (p *PeerDelegate) MergeRemoteState(buf []byte, join bool) {
-	log.Warning("merge remote state called")
+	log.Debug("merge remote state called")
 	if len(buf) == 0 {
 		return
 	}
