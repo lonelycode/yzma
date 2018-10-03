@@ -1,0 +1,19 @@
+{
+  "API": {
+    "Bind": "0.0.0.0:8080"
+  },
+  "Peering": {
+    "Name": "kronk",
+    "BindPort": 37001,
+    "BindAddr": "0.0.0.0",
+    "AdvertisePort": 37001,
+    "AdvertiseAddress": "127.0.0.1",
+    "Federation": {
+      "NodeName": "kronk",
+      "APIIngress": "127.0.0.1:37002"
+    }
+  },
+  "Server": {
+    "DBPath": "dat.db"
+  }
+}

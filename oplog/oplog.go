@@ -71,7 +71,7 @@ type OpLog struct {
 
 func NewOp(key string, value interface{}, opn Opn) *OpLog {
 	ts := time.Now().UnixNano()
-	opId := fmt.Sprintf("%s.%s.%s", string(opn), strconv.Itoa(int(ts)), key)
+	opId := fmt.Sprintf("%s.%s.%s", strconv.Itoa(int(ts)), string(opn), key)
 	vId := idGen.ValueID(nil)
 	kId := fmt.Sprintf("%s.%s.%s", strings.ToLower(string(opn)), key, vId)
 
@@ -217,4 +217,8 @@ func (h *Handler) Remove(key string) {
 
 func (h *Handler) Replicate(op *OpLog) {
 	h.commitChan <- op
+}
+
+func (h *Handler) OpLog(from string) [][]byte {
+	return h.db.OpLog(from)
 }

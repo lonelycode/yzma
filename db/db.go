@@ -266,6 +266,21 @@ func (d *DB) HandleCollision(values crdt.Payload) crdt.Payload {
 	return values
 }
 
+func (d *DB) OpLog(from string) [][]byte {
+	ops := make([][]byte, 0)
+	d.Db.View(func(tx *bolt.Tx) error {
+		c := tx.Bucket([]byte(OPS)).Cursor()
+		pfx := []byte(from)
+		for k, v := c.Seek(pfx); k != nil && bytes.HasPrefix(k, pfx); k, v = c.Next() {
+			ops = append(ops, v)
+		}
+
+		return nil
+	})
+
+	return ops
+}
+
 func Decode(value []byte, into interface{}) error {
 	return json.Unmarshal(value, into)
 }

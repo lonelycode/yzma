@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-var cfgPtr *string     // late-binding for configuration location
+var cfgPtr, joinPtr *string // late-binding for configuration location
 
 func ReadConfig() {
 	err := viper.ReadInConfig()
@@ -28,11 +28,12 @@ func init() {
 	viper.AddConfigPath("/etc/yzma/")
 
 	// Allow for a custom location to be set
-	cfgPtr = flag.String("c", "", "config location (excluding filename)")
+	cfgPtr = flag.String("c", "", "config file")
+	joinPtr = flag.String("j", "", "join peer")
 	flag.Parse()
 
 	if *cfgPtr != "" {
-		viper.AddConfigPath(*cfgPtr)
+		viper.SetConfigFile(*cfgPtr)
 	}
 
 	ReadConfig()

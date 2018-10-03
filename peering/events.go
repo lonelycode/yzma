@@ -97,7 +97,12 @@ func (p *PeerManager) Init(cfg *PeerConfig) error {
 	listCfg.AdvertisePort = p.cfg.AdvertisePort
 	listCfg.BindPort = p.cfg.BindPort
 	listCfg.Events = &PeerEvents{blockList: p.cfg.Block, servList: p.fixedServers}
-	listCfg.Delegate = &PeerDelegate{cfg: p.cfg.Federation, bcast: p.Broadcasts, bcastChan: p.cfg.ReplicaChan}
+	listCfg.Delegate = &PeerDelegate{
+		cfg:          p.cfg.Federation,
+		bcast:        p.Broadcasts,
+		bcastChan:    p.cfg.ReplicaChan,
+		oplogHandler: p.cfg.OpLogHandler,
+	}
 	listCfg.BindAddr = p.cfg.BindAddr
 
 	bAddr := "0.0.0.0"

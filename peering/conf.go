@@ -22,6 +22,7 @@ type PeerConfig struct {
 	Block            []string
 	Federation       *PeerData
 	ReplicaChan      chan *oplog.OpLog
+	OpLogHandler     *oplog.Handler
 }
 
 type Config struct {

@@ -27,6 +27,20 @@ func info() {
 	fmt.Println()
 }
 
+func doJoin(svr *server.Server) {
+	for {
+		if svr.Ready() {
+			err := svr.Join([]string{*joinPtr})
+			if err != nil {
+				log.Error("join failed: ", err)
+			}
+			break
+		}
+
+		time.Sleep(1 * time.Second)
+	}
+}
+
 func main() {
 	info()
 	peeringConf := peering.GetConf()
@@ -41,6 +55,10 @@ func main() {
 	webCfg := api.GetConf()
 	web := api.WebAPI{}
 	go web.Start(svr, webCfg)
+
+	if *joinPtr != "" {
+		go doJoin(svr)
+	}
 
 	// Wait to quit
 	log.Info("Press Ctrl+C to end")

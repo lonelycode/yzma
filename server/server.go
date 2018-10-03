@@ -14,14 +14,22 @@ type Server struct {
 	cfg       *Config
 	peers     *peering.PeerManager
 	stopCh    chan struct{}
+	ready     bool
 }
 
 var log = logger.GetLogger("server")
 
+func (s *Server) Ready() bool {
+	return s.ready
+}
+
 func (s *Server) Start(name string, peeringCfg *peering.PeerConfig, stopCh chan struct{}) {
 	s.stopCh = stopCh
+	// Create an OpHandler
+	s.opHandler = &oplog.Handler{}
 
 	// Create and start a peer handler
+	peeringCfg.OpLogHandler = s.opHandler
 	pm, err := peering.NewPeerManager(peeringCfg)
 	if err != nil {
 		log.Fatal(err)
@@ -36,8 +44,6 @@ func (s *Server) Start(name string, peeringCfg *peering.PeerConfig, stopCh chan 
 	d.Options.CollisionStrategy = crdt.LWWStrat
 	s.db = d
 
-	// Create an OpHandler
-	s.opHandler = &oplog.Handler{}
 	s.opHandler.SetReplicaChannel(peeringCfg.ReplicaChan)
 	// Create a replicator
 	s.opHandler.SetReplicator(&oplog.PeeringReplicator{
@@ -47,6 +53,8 @@ func (s *Server) Start(name string, peeringCfg *peering.PeerConfig, stopCh chan 
 	log.Info("starting oplog processor")
 	s.opHandler.Start(d)
 	log.Info("db ready")
+
+	s.ready = true
 
 	<-stopCh
 	log.Warn("received stop signal, stopping service")
@@ -86,6 +94,10 @@ func (s *Server) Join(peers []string) error {
 }
 
 func (s *Server) Leave() error {
+	return s.peers.Leave()
+}
+
+func (s *Server) OpLogDiff(from string) error {
 	return s.peers.Leave()
 }
 
