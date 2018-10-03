@@ -89,6 +89,7 @@ type Handler struct {
 	replicaChan chan *OpLog
 	db          *db.DB
 	rep         Replicator
+	killChans   []chan struct{}
 }
 
 func (h *Handler) SetProcessChannel(ch chan *OpLog) {
@@ -103,24 +104,33 @@ func (h *Handler) SetReplicator(rep Replicator) {
 	h.rep = rep
 }
 
-func (h *Handler) start() {
+func (h *Handler) start(kill chan struct{}) {
 	for {
-		op := <-h.commitChan
-		err := h.processOp(op)
-		if err != nil {
-			log.Error(err)
+		select {
+		case op := <-h.commitChan:
+			err := h.processOp(op)
+			if err != nil {
+				log.Error(err)
+			}
+		case <-kill:
+			break
 		}
 	}
 }
 
-func (h *Handler) startReplChan() {
+func (h *Handler) startReplChan(kill chan struct{}) {
 	for {
-		op := <-h.replicaChan
-		op.IsFromRemote = true
-		err := h.processOp(op)
-		if err != nil {
-			log.Error(err)
+		select {
+		case op := <-h.replicaChan:
+			op.IsFromRemote = true
+			err := h.processOp(op)
+			if err != nil {
+				log.Error(err)
+			}
+		case <-kill:
+			break
 		}
+
 	}
 }
 
@@ -170,13 +180,29 @@ func (h *Handler) Start(db *db.DB) {
 	}
 
 	workers := 1
+	h.killChans = make([]chan struct{}, 0)
 	for i := 0; i <= workers; i++ {
-		go h.start()
+		readCh := make(chan struct{})
+		h.killChans = append(h.killChans, readCh)
+		go h.start(readCh)
 		if h.rep != nil {
-			go h.startReplChan()
+			replKChan := make(chan struct{})
+			h.killChans = append(h.killChans, replKChan)
+			go h.startReplChan(replKChan)
 		}
 	}
 
+}
+
+func (h *Handler) Stop() {
+	log.Infof("stopping %v workers", len(h.killChans))
+	for _, ch := range h.killChans {
+		select {
+		case ch <- struct{}{}:
+		default:
+
+		}
+	}
 }
 
 func (h *Handler) Add(key string, value interface{}) {
