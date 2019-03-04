@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/memberlist"
 	"github.com/lonelycode/yzma/db"
 	"github.com/lonelycode/yzma/oplog"
+	"gopkg.in/vmihailenco/msgpack.v2"
 	"sync"
 )
 
@@ -24,7 +25,7 @@ var (
 func (p *PeerDelegate) NodeMeta(limit int) []byte {
 	js, err := json.Marshal(p.cfg)
 	if err != nil {
-		log.Error(err)
+		log.Error("failed to encode node meta", err)
 	}
 
 	log.Debug("metadata returned: ", string(js))
@@ -98,9 +99,9 @@ func (p *PeerDelegate) MergeRemoteState(buf []byte, join bool) {
 	// by reading and writing direct to the DB
 	for _, bOp := range arrayDat {
 		opVal := &oplog.OpLog{}
-		err = json.Unmarshal(bOp, opVal)
+		err = msgpack.Unmarshal(bOp, opVal)
 		if err != nil {
-			log.Error(err)
+			log.Error("MergeRemoteState failed: ", err)
 			continue
 		}
 

@@ -16,8 +16,8 @@ var log = logger.GetLogger("api")
 
 type Payload struct {
 	Status string
-	Error  string
-	Data   interface{}
+	Error  string `json:",omitempty"`
+	Data   interface{} `json:",omitempty"`
 }
 
 type JoinReq struct {
