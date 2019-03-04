@@ -64,7 +64,7 @@ Then bring up a second node and join it to the cluster (this can also be done wi
  
 You should now see some output on both nodes that the nodes have joined, you should now be able to add, delete and retrieve data from the store using the API.
 
-> The API only support JSON payloads at the moment, so if you need to store arbitrary data types, wrap them in a JSON map.
+> The API ~~only support JSON payloads at the moment~~ supports any payload type, and returns values base64 encoded (this is the default representation for raw byte arrays in Go when marshalled to JSON, this only affects the HTTP API)
 
 ## HTTP API
 
@@ -78,11 +78,11 @@ For example:
 
     curl -X POST -d @dat.json http://localhost:8080/keys/foo
 
-The payload should be a JSON object, it will automatically be decoded and made available in the payload object, like so:
+The ca object, it will automn be any object, it will be base64 encoded and made available in the payload object, like so:
 
     curl -X GET http://localhost:8081/keys/foo 
     
-    {"Status":"ok","Error":"","Data":{"foo":"bar"}}
+    {"Status":"ok","Error":"","Data":"B64-DATA-HERE"}
     
 ### Joining and leaving a cluster
 
@@ -100,7 +100,7 @@ Some things that I'd like to investigate further:
 
 - [ ] Compress the oplog so that replication of large data sets can be faster when new nodes join
 - [ ] Have nodes only update from an oplog ID to make the replication process faster
-- [ ] Move encoding of data on-disk to a binary format, it's JSON at the moment for convenience and switching to msgpack introduces weird decoding issues  
+- [x] Move encoding of data on-disk to a binary format, it's JSON at the moment for convenience and switching to msgpack introduces weird decoding issues  
 - [ ] Add a CLI for easier testing
         
 ### Disclaimer
