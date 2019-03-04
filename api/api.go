@@ -92,14 +92,12 @@ func (a *WebAPI) AddObject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//var obj interface{}
-	//err = json.Unmarshal(b, &obj)
-	//if err != nil {
-	//	a.wErr(w, r, err.Error(), http.StatusInternalServerError)
-	//	return
-	//}
+	t := ""
+	if r.Header.Get("content-type") != "" {
+		t = r.Header.Get("content-type")
+	}
 
-	a.server.Add(k, b)
+	a.server.Add(k, b, t)
 	a.wOk(w, r, fmt.Sprintf("added %s", k), http.StatusOK)
 }
 
@@ -113,6 +111,11 @@ func (a *WebAPI) RemObject(w http.ResponseWriter, r *http.Request) {
 
 	a.server.Remove(k)
 	a.wOk(w, r, fmt.Sprintf("deleted %s", k), http.StatusOK)
+}
+
+type PublicData struct {
+	Data interface{}
+	Type string
 }
 
 func (a *WebAPI) LoadObject(w http.ResponseWriter, r *http.Request) {
@@ -129,7 +132,9 @@ func (a *WebAPI) LoadObject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	a.wOk(w, r, dat.Extract(), http.StatusOK)
+	d, t := dat.Extract()
+
+	a.wOk(w, r, &PublicData{Data:d, Type:t}, http.StatusOK)
 }
 
 func (a *WebAPI) wOk(w http.ResponseWriter, r *http.Request, msg interface{}, code int) {

@@ -69,7 +69,7 @@ type OpLog struct {
 	IsFromRemote bool
 }
 
-func NewOp(key string, value []byte, opn Opn) *OpLog {
+func NewOp(key string, value []byte, opn Opn, mType string) *OpLog {
 	ts := time.Now().UnixNano()
 	opId := fmt.Sprintf("%s.%s.%s", strconv.Itoa(int(ts)), string(opn), key)
 	vId := idGen.ValueID(nil)
@@ -82,7 +82,7 @@ func NewOp(key string, value []byte, opn Opn) *OpLog {
 		KID:   kId,
 		Key:   key,
 		Op:    opn,
-		Value: &crdt.TSValue{TS: ts, Value: value},
+		Value: &crdt.TSValue{TS: ts, Value: value, MimeType: mType},
 	}
 }
 
@@ -207,13 +207,13 @@ func (h *Handler) Stop() {
 	}
 }
 
-func (h *Handler) Add(key string, value []byte) {
-	op := NewOp(key, value, ADD)
+func (h *Handler) Add(key string, value []byte, mType string) {
+	op := NewOp(key, value, ADD, mType)
 	h.commitChan <- op
 }
 
 func (h *Handler) Remove(key string) {
-	op := NewOp(key, nil, REM)
+	op := NewOp(key, nil, REM, "")
 	h.commitChan <- op
 }
 

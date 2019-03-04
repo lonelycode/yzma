@@ -45,7 +45,7 @@ func TestDB_AddContains(t *testing.T) {
 		t.Errorf("Expected set to not contain: %v, but found", testValue)
 	}
 
-	handler.Add(testValue, []byte("foo"))
+	handler.Add(testValue, []byte("foo"), "")
 
 	time.Sleep(100 * time.Millisecond)
 	_, ok = db.Load(testValue)
@@ -59,7 +59,7 @@ func TestDB_AddRemoveContains(t *testing.T) {
 	defer teardown(db, n)
 
 	var testValue string = "object"
-	handler.Add(testValue, []byte("foo"))
+	handler.Add(testValue, []byte("foo"), "")
 
 	time.Sleep(100 * time.Millisecond)
 	handler.Remove(testValue)
@@ -77,13 +77,14 @@ func TestDB_AddRemoveAddContains(t *testing.T) {
 
 	var testValue string = "object"
 
-	handler.Add(testValue, []byte("foo"))
+	handler.Add(testValue, []byte("foo"), "")
 	handler.Remove(testValue)
-	handler.Add(testValue, []byte("foo"))
+	handler.Add(testValue, []byte("foo"), "")
 
 	v, ok := db.Load(testValue)
 	if !ok {
-		t.Errorf("Expected set to contain: %v, but not found (%v)", testValue, v.Extract())
+		d, _ := v.Extract()
+		t.Errorf("Expected set to contain: %v, but not found (%v)", testValue, d)
 	}
 }
 
@@ -93,8 +94,8 @@ func TestDB_AddAddRemoveContains(t *testing.T) {
 
 	var testValue string = "object"
 
-	handler.Add(testValue, []byte("foo"))
-	handler.Add(testValue, []byte("foo"))
+	handler.Add(testValue, []byte("foo"), "")
+	handler.Add(testValue, []byte("foo"), "")
 
 	// TODO: This isn't great, the writes are too fast for the removes to take effect
 	time.Sleep(100 * time.Millisecond)
@@ -107,57 +108,3 @@ func TestDB_AddAddRemoveContains(t *testing.T) {
 	}
 }
 
-//func TestWrites(t *testing.T) {
-//	d1, fn1 := NewDB()
-//	defer os.Remove(fn1)
-//
-//	d2, fn2 := NewDB()
-//	defer os.Remove(fn2)
-//
-//	h1 := Handler{}
-//	h1Input := make(chan *OpLog)
-//	h1.SetReplicaChannel(h1Input)
-//
-//	h2 := Handler{}
-//	h2Input := make(chan *OpLog)
-//	h2.SetReplicaChannel(h2Input)
-//
-//	rep1 := &InAppReplicator{
-//		Buffer: h2Input,
-//	}
-//
-//	rep2 := &InAppReplicator{
-//		Buffer: h1Input,
-//	}
-//
-//	h1.rep = rep1
-//	h2.rep = rep2
-//
-//	h1.Start(d1)
-//	h2.Start(d2)
-//
-//	h1.Add("k1", "foo")
-//	h1.Add("k1", "bar")
-//	h1.Add("k1", "baz")
-//	h2.Add("k1", "baz2")
-//
-//	time.Sleep(100 * time.Millisecond)
-//	h2.Remove("k1")
-//
-//	time.Sleep(100 * time.Millisecond)
-//	x, ok := d1.Load("k1")
-//
-//	log.Info(x.Extract())
-//	log.Info(ok)
-//
-//	//time.Sleep(100 * time.Millisecond)
-//	//d.Db.View(func(tx *bolt.Tx) error {
-//	//	c := tx.Bucket([]byte(db.KEYS)).Cursor()
-//	//	addPrefix := []byte("")
-//	//	for k, _ := c.Seek(addPrefix); k != nil && bytes.HasPrefix(k, addPrefix); k, _ = c.Next() {
-//	//		log.Warn(string(k))
-//	//	}
-//	//
-//	//	return nil
-//	//})
-//}

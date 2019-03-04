@@ -3,6 +3,7 @@ package server
 import (
 	"github.com/lonelycode/yzma/oplog"
 	"github.com/lonelycode/yzma/peering"
+	"github.com/lonelycode/yzma/types/crdt"
 	"os"
 	"os/signal"
 	"sync"
@@ -34,6 +35,12 @@ var jsObj = `
 	}
 }
 `
+
+func GetVal(v crdt.Payload) interface{} {
+	d, _ := v.Extract()
+	return d
+}
+
 func TestServerAndReplication(t *testing.T) {
 	replicaChanS1 := make(chan *oplog.OpLog)
 	replicaChanS2 := make(chan *oplog.OpLog)
@@ -89,52 +96,53 @@ func TestServerAndReplication(t *testing.T) {
 	s2.peers.Join([]string{"127.0.0.1:37001"})
 
 	time.Sleep(100 * time.Millisecond)
-	s1.Add("k1", []byte("foo"))
-	s1.Add("k2", []byte("bar"))
-	s1.Add("k3", []byte("baz"))
-	s1.Add("k4", []byte(jsObj))
+	s1.Add("k1", []byte("foo"), "")
+	s1.Add("k2", []byte("bar"), "")
+	s1.Add("k3", []byte("baz"), "")
+	s1.Add("k4", []byte(jsObj), "")
 
 	time.Sleep(100 * time.Millisecond)
 	v, ok := s1.Load("k1")
 	if !ok {
 		t.Error("expected to find k1")
 	}
-	if string(v.Extract().([]byte)) != "foo" {
-		t.Error("wrong value for k1: ", string(v.Extract().([]byte)))
+	if string(GetVal(v).([]byte)) != "foo" {
+		t.Error("wrong value for k1: ", string(GetVal(v).([]byte)))
 	}
 
 	v, ok = s1.Load("k2")
 	if !ok {
 		t.Error("expected to find k2")
 	}
-	if string(v.Extract().([]byte)) != "bar" {
-		t.Error("wrong value for k2", string(v.Extract().([]byte)))
+	if string(GetVal(v).([]byte)) != "bar" {
+		t.Error("wrong value for k2", string(GetVal(v).([]byte)))
 	}
 
 	v, ok = s1.Load("k3")
 	if !ok {
 		t.Error("expected to find k3")
 	}
-	if string(v.Extract().([]byte)) != "baz" {
-		t.Error("wrong value for k3", string(v.Extract().([]byte)))
+	if string(GetVal(v).([]byte)) != "baz" {
+		t.Error("wrong value for k3", string(GetVal(v).([]byte)))
 	}
 
 	v, ok = s1.Load("k4")
 	if !ok {
 		t.Error("expected to find k4")
 	}
-	if string(v.Extract().([]byte)) != jsObj {
-		t.Error("wrong value for k4", string(v.Extract().([]byte)))
+	if string(GetVal(v).([]byte)) != jsObj {
+		t.Error("wrong value for k4", string(GetVal(v).([]byte)))
 	}
 
-	s2.Add("k1", []byte("barbaz"))
+	s2.Add("k1", []byte("barbaz"), "")
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
 		time.Sleep(10 * time.Second)
 		v2, _ := s1.Load("k1")
-		if string(v2.Extract().([]byte)) != "barbaz" {
+		d, _ := v2.Extract()
+		if string(d.([]byte)) != "barbaz" {
 			t.Error("expected s1 to have replicated k1 from s2")
 		}
 		wg.Done()

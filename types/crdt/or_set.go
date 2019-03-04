@@ -45,18 +45,19 @@ func (v UniqueIDGUIDer) ValueID(value interface{}) string {
 type TSValue struct {
 	TS int64
 	Value []byte
+	MimeType string
 }
 
 type Payload map[string]*TSValue
 
-func (p Payload) Extract() interface{} {
+func (p Payload) Extract() (interface{}, string) {
 	if len(p) == 1 {
 		for _, v := range p {
-			return v.Value
+			return v.Value, v.MimeType
 		}
 	}
 
-	return nil
+	return nil, ""
 }
 
 func (p Payload) ExtractAll() []interface{} {

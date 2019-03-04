@@ -77,8 +77,8 @@ func (s *Server) Stop() {
 	s.stopCh <- struct{}{}
 }
 
-func (s *Server) Add(key string, value []byte) {
-	s.opHandler.Add(key, value)
+func (s *Server) Add(key string, value []byte, mType string) {
+	s.opHandler.Add(key, value, mType)
 }
 
 func (s *Server) Remove(key string) {

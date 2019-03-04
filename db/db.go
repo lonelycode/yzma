@@ -118,10 +118,10 @@ func (d *DB) StoreOpLog(id string, value interface{}) error {
 	return nil
 }
 
-func (d *DB) Add(key string, value []byte) error {
+func (d *DB) Add(key string, value []byte, mType string) error {
 	vId := d.IDSource.ValueID(value)
 
-	tsv := &crdt.TSValue{TS: time.Now().UnixNano(), Value: value}
+	tsv := &crdt.TSValue{TS: time.Now().UnixNano(), Value: value, MimeType: mType}
 	addKey := fmt.Sprintf("add.%s.%s", key, vId)
 
 	enc, err := Encode(tsv)

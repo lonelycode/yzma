@@ -41,7 +41,7 @@ func TestORSetAddContains(t *testing.T) {
 		t.Errorf("Expected set to not contain: %v, but found", testValue)
 	}
 
-	orSet.Add(testValue, []byte("foo"))
+	orSet.Add(testValue, []byte("foo"), "")
 
 	_, ok = orSet.Load(testValue)
 	if !ok {
@@ -54,7 +54,7 @@ func TestORSetAddRemoveContains(t *testing.T) {
 	defer teardown(orSet, n)
 
 	var testValue string = "object"
-	orSet.Add(testValue, []byte("foo"))
+	orSet.Add(testValue, []byte("foo"), "")
 
 	orSet.Remove(testValue)
 
@@ -70,13 +70,14 @@ func TestORSetAddRemoveAddContains(t *testing.T) {
 
 	var testValue string = "object"
 
-	orSet.Add(testValue, []byte("foo"))
+	orSet.Add(testValue, []byte("foo"), "")
 	orSet.Remove(testValue)
-	orSet.Add(testValue, []byte("foo"))
+	orSet.Add(testValue, []byte("foo"), "")
 
 	v, ok := orSet.Load(testValue)
 	if !ok {
-		t.Errorf("Expected set to contain: %v, but not found (%v)", testValue, v.Extract())
+		d, tp := v.Extract()
+		t.Errorf("Expected set to contain: %v, but not found (%v, %v)", testValue, d, tp)
 	}
 }
 
@@ -86,8 +87,8 @@ func TestORSetAddAddRemoveContains(t *testing.T) {
 
 	var testValue string = "object"
 
-	orSet.Add(testValue, []byte("foo"))
-	orSet.Add(testValue, []byte("foo"))
+	orSet.Add(testValue, []byte("foo"), "")
+	orSet.Add(testValue, []byte("foo"), "")
 	orSet.Remove(testValue)
 
 	_, ok := orSet.Load(testValue)
