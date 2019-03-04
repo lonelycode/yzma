@@ -10,6 +10,30 @@ import (
 	"time"
 )
 
+var jsObj = `
+{
+	"glossary": {
+		"title": "example glossary",
+		"GlossDiv": {
+			"title": "S",
+			"GlossList": {
+				"GlossEntry": {
+					"ID": "SGML",
+					"SortAs": "SGML",
+					"GlossTerm": "Standard Generalized Markup Language",
+					"Acronym": "SGML",
+					"Abbrev": "ISO 8879:1986",
+					"GlossDef": {
+						"para": "A meta-markup language, used to create markup languages such as DocBook.",
+						"GlossSeeAlso": ["GML", "XML"]
+					},
+					"GlossSee": "markup"
+				}
+			}
+		}
+	}
+}
+`
 func TestServerAndReplication(t *testing.T) {
 	replicaChanS1 := make(chan *oplog.OpLog)
 	replicaChanS2 := make(chan *oplog.OpLog)
@@ -65,43 +89,52 @@ func TestServerAndReplication(t *testing.T) {
 	s2.peers.Join([]string{"127.0.0.1:37001"})
 
 	time.Sleep(100 * time.Millisecond)
-	s1.Add("k1", "foo")
-	s1.Add("k2", "bar")
-	s1.Add("k3", "baz")
+	s1.Add("k1", []byte("foo"))
+	s1.Add("k2", []byte("bar"))
+	s1.Add("k3", []byte("baz"))
+	s1.Add("k4", []byte(jsObj))
 
 	time.Sleep(100 * time.Millisecond)
 	v, ok := s1.Load("k1")
 	if !ok {
 		t.Error("expected to find k1")
 	}
-	if v.Extract() != "foo" {
-		t.Error("wrong value for k1")
+	if string(v.Extract().([]byte)) != "foo" {
+		t.Error("wrong value for k1: ", string(v.Extract().([]byte)))
 	}
 
 	v, ok = s1.Load("k2")
 	if !ok {
 		t.Error("expected to find k2")
 	}
-	if v.Extract() != "bar" {
-		t.Error("wrong value for k2")
+	if string(v.Extract().([]byte)) != "bar" {
+		t.Error("wrong value for k2", string(v.Extract().([]byte)))
 	}
 
 	v, ok = s1.Load("k3")
 	if !ok {
 		t.Error("expected to find k3")
 	}
-	if v.Extract() != "baz" {
-		t.Error("wrong value for k3")
+	if string(v.Extract().([]byte)) != "baz" {
+		t.Error("wrong value for k3", string(v.Extract().([]byte)))
 	}
 
-	s2.Add("k1", "barbaz")
+	v, ok = s1.Load("k4")
+	if !ok {
+		t.Error("expected to find k4")
+	}
+	if string(v.Extract().([]byte)) != jsObj {
+		t.Error("wrong value for k4", string(v.Extract().([]byte)))
+	}
+
+	s2.Add("k1", []byte("barbaz"))
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
 		time.Sleep(10 * time.Second)
 		v2, _ := s1.Load("k1")
-		if v2.Extract() != "barbaz" {
+		if string(v2.Extract().([]byte)) != "barbaz" {
 			t.Error("expected s1 to have replicated k1 from s2")
 		}
 		wg.Done()

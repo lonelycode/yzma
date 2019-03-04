@@ -92,14 +92,14 @@ func (a *WebAPI) AddObject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var obj interface{}
-	err = json.Unmarshal(b, &obj)
-	if err != nil {
-		a.wErr(w, r, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	//var obj interface{}
+	//err = json.Unmarshal(b, &obj)
+	//if err != nil {
+	//	a.wErr(w, r, err.Error(), http.StatusInternalServerError)
+	//	return
+	//}
 
-	a.server.Add(k, obj)
+	a.server.Add(k, b)
 	a.wOk(w, r, fmt.Sprintf("added %s", k), http.StatusOK)
 }
 
@@ -155,6 +155,7 @@ func (a *WebAPI) writeToClient(w http.ResponseWriter, r *http.Request, data *Pay
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
+		log.Error("write to client failed: ", err, " payload was: ", data)
 		return
 	}
 

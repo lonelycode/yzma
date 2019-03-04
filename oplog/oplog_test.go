@@ -45,7 +45,7 @@ func TestDB_AddContains(t *testing.T) {
 		t.Errorf("Expected set to not contain: %v, but found", testValue)
 	}
 
-	handler.Add(testValue, "foo")
+	handler.Add(testValue, []byte("foo"))
 
 	time.Sleep(100 * time.Millisecond)
 	_, ok = db.Load(testValue)
@@ -59,7 +59,7 @@ func TestDB_AddRemoveContains(t *testing.T) {
 	defer teardown(db, n)
 
 	var testValue string = "object"
-	handler.Add(testValue, "foo")
+	handler.Add(testValue, []byte("foo"))
 
 	time.Sleep(100 * time.Millisecond)
 	handler.Remove(testValue)
@@ -77,9 +77,9 @@ func TestDB_AddRemoveAddContains(t *testing.T) {
 
 	var testValue string = "object"
 
-	handler.Add(testValue, "foo")
+	handler.Add(testValue, []byte("foo"))
 	handler.Remove(testValue)
-	handler.Add(testValue, "foo")
+	handler.Add(testValue, []byte("foo"))
 
 	v, ok := db.Load(testValue)
 	if !ok {
@@ -93,8 +93,8 @@ func TestDB_AddAddRemoveContains(t *testing.T) {
 
 	var testValue string = "object"
 
-	handler.Add(testValue, "foo")
-	handler.Add(testValue, "foo")
+	handler.Add(testValue, []byte("foo"))
+	handler.Add(testValue, []byte("foo"))
 
 	// TODO: This isn't great, the writes are too fast for the removes to take effect
 	time.Sleep(100 * time.Millisecond)

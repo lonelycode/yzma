@@ -2,10 +2,10 @@ package db
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"github.com/lonelycode/yzma/types/crdt"
 	bolt "go.etcd.io/bbolt"
+	"gopkg.in/vmihailenco/msgpack.v2"
 	"sort"
 	"strings"
 	"sync"
@@ -118,8 +118,9 @@ func (d *DB) StoreOpLog(id string, value interface{}) error {
 	return nil
 }
 
-func (d *DB) Add(key string, value interface{}) error {
+func (d *DB) Add(key string, value []byte) error {
 	vId := d.IDSource.ValueID(value)
+
 	tsv := &crdt.TSValue{TS: time.Now().UnixNano(), Value: value}
 	addKey := fmt.Sprintf("add.%s.%s", key, vId)
 
@@ -282,9 +283,9 @@ func (d *DB) OpLog(from string) [][]byte {
 }
 
 func Decode(value []byte, into interface{}) error {
-	return json.Unmarshal(value, into)
+	return msgpack.Unmarshal(value, into)
 }
 
 func Encode(value interface{}) ([]byte, error) {
-	return json.Marshal(value)
+	return msgpack.Marshal(value)
 }

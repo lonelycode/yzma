@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
+	"github.com/lonelycode/yzma/logger"
 	"github.com/satori/go.uuid"
 	"strings"
 	"time"
@@ -13,6 +14,9 @@ const (
 	LWWStrat = "lww"
 	NoStrat = ""
 )
+
+var log = logger.GetLogger("crdt")
+
 
 type ObserveGUIDer interface{
 	ValueID(value interface{}) string
@@ -40,7 +44,7 @@ func (v UniqueIDGUIDer) ValueID(value interface{}) string {
 
 type TSValue struct {
 	TS int64
-	Value interface{}
+	Value []byte
 }
 
 type Payload map[string]*TSValue
